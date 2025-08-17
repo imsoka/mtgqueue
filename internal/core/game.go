@@ -41,11 +41,14 @@ func NewGame(gameFormat GameFormat, minPlayers, maxPlayers int, host string) *Ga
 }
 
 func (g *Game) AddPlayer(pid string) error {
-  if g.Status != Created && g.Status != WaitingForPlayers {
-    return errors.New("Cannot add players to a game that is not accepting more players")
+  if g.canAddPlayersByStatus() {
+    return errors.New("Cannot add players to the game if it's active, ready or finished")
   }
 
-  if len(g.Players) >= g.MaxPlayers {
+  pc := len(g.Players)
+
+
+  if pc >= g.MaxPlayers {
     return errors.New("Game is full")
   }
 
@@ -55,6 +58,70 @@ func (g *Game) AddPlayer(pid string) error {
 
   g.Players = append(g.Players, pid)
 
+  pc = len(g.Players)
+
+  g.updateGameStatus()
+
+
   return nil
 }
 
+func (g *Game) RemovePlayer(pid string) error {
+  statusError := "Cannot remove player when game is active or is finished"
+  if !g.canRemovePlayerByStatus() {
+    return errors.New(statusError)
+  }
+
+  g.updateGameStatus()
+
+  return nil
+}
+
+func (g *Game) Start() error {
+  if g.Status != Ready && g.Status != WaitingForPlayers {
+    return errors.New("Game cannot start if it isn't ready")
+  }
+
+  if len(g.Players) < g.MinPlayers {
+    return errors.New("If player count is below minPlayers, the game cannot start")
+  }
+
+  now := time.Now()
+  g.StartedAt = &now
+  g.Status = Active
+
+  return nil
+}
+
+func (g *Game) canRemovePlayerByStatus() bool {
+  nonRemovableStates := []GameStatus{Active, Finished, Cancelled, Abandoned}
+
+  return !slices.Contains(nonRemovableStates, g.Status)
+}
+
+func (g *Game) canAddPlayersByStatus() bool {
+  nonAppendableStates := []GameStatus{
+      Finished,
+      Cancelled
+      Ready
+      Active
+      Abandoned
+    }
+
+  return !slices.Contains(nonAppendableStates, g.Status)
+}
+
+func (g *Game) updateGameStatus() {
+  playerCount := len(g.Players)
+
+  switch {
+	  case playerCount == 0:
+		  g.Status = Cancelled
+    case playerCount == 1:
+		  g.Status = WaitingForPlayers
+	  case playerCount == g.MaxPlayers:
+		  g.Status = Ready
+	  default:
+		  g.Status = WaitingForPlayers
+	}
+}

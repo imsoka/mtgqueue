@@ -6,20 +6,20 @@ const (
 	Created GameStatus = iota
 	WaitingForPlayers
 	Active
-	Paused
-	Completed
+	Finished
 	Cancelled
 	Abandoned
+  Ready
 )
 
-var gameStatusNames = map[GameStatus]string{
-	Created:           "created",
-	WaitingForPlayers: "waiting_for_players",
-	Active:            "active",
-	Paused:            "paused",
-	Completed:         "completed",
-	Cancelled:         "cancelled",
-	Abandoned:         "abandoned",
+var gameStatusNames = map[GameStatus]string {
+	Created:            "created",
+	WaitingForPlayers:  "waiting_for_players",
+	Active:             "active",
+	Finished:           "finished",
+	Cancelled:          "cancelled",
+	Abandoned:          "abandoned",
+  Ready:              "ready",
 }
 
 func (gs GameStatus) String() string {
