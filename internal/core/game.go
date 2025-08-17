@@ -41,24 +41,15 @@ func NewGame(gameFormat GameFormat, minPlayers, maxPlayers int, host string) *Ga
 }
 
 func (g *Game) AddPlayer(pid string) error {
-  if g.canAddPlayersByStatus() {
-    return errors.New("Cannot add players to the game if it's active, ready or finished")
-  }
-
   pc := len(g.Players)
 
+  error := g.canAddPlayers(pid, pc)
 
-  if pc >= g.MaxPlayers {
-    return errors.New("Game is full")
-  }
-
-  if slices.Contains(g.Players, pid) {
-    return errors.New("Player is already in game")
+  if error != nil {
+    return error
   }
 
   g.Players = append(g.Players, pid)
-
-  pc = len(g.Players)
 
   g.updateGameStatus()
 
@@ -67,10 +58,19 @@ func (g *Game) AddPlayer(pid string) error {
 }
 
 func (g *Game) RemovePlayer(pid string) error {
-  statusError := "Cannot remove player when game is active or is finished"
-  if !g.canRemovePlayerByStatus() {
-    return errors.New(statusError)
+
+  error := g.canRemovePlayer(pid)
+
+  if error != nil {
+    return error
   }
+
+  playerIndex := slices.Index(g.Players, pid)
+  if playerIndex == -1 {
+    return errors.New("Player not found in this game")
+  }
+
+  g.Players = slices.Delete(g.Players, playerIndex, playerIndex+1)
 
   g.updateGameStatus()
 
@@ -90,37 +90,101 @@ func (g *Game) Start() error {
   g.StartedAt = &now
   g.Status = Active
 
+  //TODO: increase players gamesPlayed count
+
   return nil
 }
 
-func (g *Game) canRemovePlayerByStatus() bool {
-  nonRemovableStates := []GameStatus{Active, Finished, Cancelled, Abandoned}
+func (g *Game) Finish(winner string) error {
+  now := time.Now()
 
-  return !slices.Contains(nonRemovableStates, g.Status)
+  if g.Status != Active {
+    return errors.New("Cannot finish a non-active game")
+  }
+
+  if g.Status == Finished {
+    return errors.New("Cannot finished an already finished game")
+  }
+
+  g.Status = Finished
+  g.Winner = winner
+  g.FinishedAt = &now
+
+  //TODO: Assign win to player
+
+  return nil
 }
 
-func (g *Game) canAddPlayersByStatus() bool {
+func (g *Game) Cancel() error {
+  now := time.Now()
+
+  if g.Status != Created && g.Status != WaitingForPlayers && g.Status != Ready {
+    return errors.New("Only not started games can be cancelled")
+  }
+
+  g.Status = Cancelled
+  g.FinishedAt = &now
+
+  return nil
+}
+
+func (g *Game) Abandon() error {
+  now := time.Now()
+
+  if g.Status != Active {
+    return errors.New("Only active games can be abandoned")
+  }
+
+  g.Status = Abandoned
+  g.FinishedAt = &now
+}
+
+func (g *Game) canRemovePlayer(pid string) error {
+  nonRemovableStates := []GameStatus{Active, Finished, Cancelled, Abandoned}
+
+  if !slices.Contains(nonRemovableStates, g.Status) {
+    return errors.New("Cannot remove a player from a game that's active or finished")
+  }
+
+  return nil
+}
+
+func (g *Game) canAddPlayers(pid string, pc int) error {
   nonAppendableStates := []GameStatus{
       Finished,
-      Cancelled
-      Ready
-      Active
-      Abandoned
+      Cancelled,
+      Ready,
+      Active,
+      Abandoned,
     }
 
-  return !slices.Contains(nonAppendableStates, g.Status)
+  if pc >= g.MaxPlayers {
+    return errors.New("Game is full")
+  }
+
+  if slices.Contains(g.Players, pid) {
+    return errors.New("Player is already in game")
+  }
+
+  if(slices.Contains(nonAppendableStates, g.Status)) {
+    return errors.New("Only can add players to game with status 'created' and 'waiting-for-players'")
+  }
+
+  return nil
 }
 
 func (g *Game) updateGameStatus() {
-  playerCount := len(g.Players)
+  pc := len(g.Players)
 
   switch {
-	  case playerCount == 0:
+	  case pc == 0:
 		  g.Status = Cancelled
-    case playerCount == 1:
+    case pc == 1:
 		  g.Status = WaitingForPlayers
-	  case playerCount == g.MaxPlayers:
+	  case pc == g.MaxPlayers:
 		  g.Status = Ready
+    case g.Winner != nil
+      g.Status = Finished
 	  default:
 		  g.Status = WaitingForPlayers
 	}
