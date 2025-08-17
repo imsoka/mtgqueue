@@ -1,29 +1,29 @@
-package core
+package game
 
 import (
 	"errors"
 	"slices"
+	"soka/mtgqueue/internal/domain/player"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Game struct {
-  ID          string        `json:"id"`
-  Format      GameFormat    `json:"format"`
-  Status      GameStatus    `json:"status"`
-  Host        string        `json:"host"`
-  MinPlayers  int           `json:"min_players"`
-  MaxPlayers  int           `json:"max_players"`
-  Players     []string      `json:"players"`
-  Winner      *string       `json:"winner"`
-  StartedAt   *time.Time    `json:"started_at"`
-  FinishedAt  *time.Time    `json:"finished_at"`
+  ID            GameID              `json:"id"`
+  Format        Format              `json:"format"`
+  Status        Status              `json:"status"`
+  Host          player.PlayerID     `json:"host"`
+  MinPlayers    int                 `json:"min_players"`
+  MaxPlayers    int                 `json:"max_players"`
+  Players       []player.PlayerID   `json:"players"`
+  Winner        *player.PlayerID    `json:"winner"`
+  StartedAt     *time.Time          `json:"started_at"`
+  FinishedAt    *time.Time          `json:"finished_at"`
 }
 
-func NewGame(gameFormat GameFormat, minPlayers, maxPlayers int, host string) *Game {
+
+func NewGame(gameFormat Format, minPlayers, maxPlayers int, host string) *Game {
   g := &Game{
-    ID: uuid.New().String(),
+    ID: NewGameID(),
     Format: gameFormat,
     Host: host,
     Status: Created,
@@ -140,7 +140,7 @@ func (g *Game) Abandon() error {
 }
 
 func (g *Game) canRemovePlayer(pid string) error {
-  nonRemovableStates := []GameStatus{Active, Finished, Cancelled, Abandoned}
+  nonRemovableStates := []Status{Active, Finished, Cancelled, Abandoned}
 
   if !slices.Contains(nonRemovableStates, g.Status) {
     return errors.New("Cannot remove a player from a game that's active or finished")
@@ -150,7 +150,7 @@ func (g *Game) canRemovePlayer(pid string) error {
 }
 
 func (g *Game) canAddPlayers(pid string, pc int) error {
-  nonAppendableStates := []GameStatus{
+  nonAppendableStates := []Status{
       Finished,
       Cancelled,
       Ready,

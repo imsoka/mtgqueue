@@ -1,4 +1,4 @@
-package core
+package player
 
 import ()
 
@@ -10,7 +10,6 @@ type Player struct {
   GamesWon      int       `json:"games_won"`
   Rating        *int      `json:"rating"`
 }
-
 
 func NewPlayer(id, username string) *Player {
   return &Player{

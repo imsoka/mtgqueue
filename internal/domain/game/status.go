@@ -1,9 +1,9 @@
-package core
+package game
 
-type GameStatus int
+type Status int
 
 const (
-	Created GameStatus = iota
+	Created Status = iota
 	WaitingForPlayers
 	Active
 	Finished
@@ -12,7 +12,7 @@ const (
   Ready
 )
 
-var gameStatusNames = map[GameStatus]string {
+var gameStatusNames = map[Status]string {
 	Created:            "created",
 	WaitingForPlayers:  "waiting_for_players",
 	Active:             "active",
@@ -22,7 +22,7 @@ var gameStatusNames = map[GameStatus]string {
   Ready:              "ready",
 }
 
-func (gs GameStatus) String() string {
+func (gs Status) String() string {
 	if name, exists := gameStatusNames[gs]; exists {
 		return name
 	}

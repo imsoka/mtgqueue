@@ -1,6 +1,6 @@
-package core
+package game
 
-type GameFormat int
+type Format int
 
 const (
   Standard = iota
@@ -18,7 +18,7 @@ const (
   Penny
 )
 
-var gameFormatNames = map[GameFormat]string {
+var gameFormatNames = map[Format]string {
   Standard:     "standard",
   Pioneer:      "pioneer",
   Modern:       "modern",
@@ -30,9 +30,11 @@ var gameFormatNames = map[GameFormat]string {
   Historic:     "historic",
   Brawl:        "brawl",
   Timeless:     "timeless",
+  Pauper:       "pauper",
+  Penny:        "penny",
 }
 
-func (gf GameFormat) String() string {
+func (gf Format) String() string {
   if name, exists := gameFormatNames[gf]; exists {
     return name
   }
