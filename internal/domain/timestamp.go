@@ -3,5 +3,5 @@ package domain
 import "time"
 
 type Timestamp interface {
-  Now() time.Time
+	Now() time.Time
 }
